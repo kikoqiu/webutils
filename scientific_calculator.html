@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Calc</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+
+
+  <script src="https://unpkg.com/mathjs@9.4.3/lib/browser/math.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+   
+
+    table {
+      border-collapse: collapse;
+    }
+
+    table td,
+    table th {
+      border: 1px solid lightgray;
+    }
+    table th {
+      background-color: lightgray;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>
+  Expression evaluation
+</h1>
+
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    <span class="input-group-text" id="basic-addon1" style='width:100px;'>Expression</span>
+  </div>
+  <input type="text" class="form-control" id="expr"  placeholder="sqrt(75 / 3) + det([[-1, 2], [3, 1]]) - sin(pi / 4)^2" aria-label="Expression" aria-describedby="basic-addon1">
+</div>
+
+
+<table  style='width:100vw'>
+    <th style='width:110px;'>Pretty </th>
+    <td><div id="pretty"  style='width:calc(100vw - 100px);word-wrap:break-word;'></div></td>
+  </tr>
+  <tr>
+    <th style='width:110px;'>Result</th>
+    <td><div id="result"  style='width:calc(100vw - 100px);word-wrap:break-word;'></div></td>
+  </tr>
+  <tr>
+    <th style='width:110px;'>BigNumber HexResult</th>
+    <td><div id="hresult"  style='width:calc(100vw - 100px);word-wrap:break-word;'></div></td>
+  </tr>
+</table>
+
+
+<br/>
+
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    <span class="input-group-text" id="precision" style='width:100px;'>Precision</span>
+  </div>
+  <input type="text" class="form-control" id="precision" value='100' pattern="\d+"  placeholder="precision"
+  aria-label="precision" aria-describedby="precision" oninput="precision=parseInt(this.value);expr.oninput();">
+</div>
+
+<b>Parenthesis option:</b><br/>
+<div class="form-check  form-check-inline">
+  <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios1" value="option1" onclick="parenthesis = 'keep'; expr.oninput();"  checked>
+  <label class="form-check-label" for="exampleRadios1">
+    keep
+  </label>
+</div>
+<div class="form-check  form-check-inline">
+  <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios2" value="option2" onclick="parenthesis = 'auto'; expr.oninput();" >
+  <label class="form-check-label" for="exampleRadios2">
+    auto
+  </label>
+</div>
+<div class="form-check  form-check-inline">
+  <input class="form-check-input" type="radio" name="exampleRadios" id="exampleRadios3" value="option3" onclick="parenthesis = 'all'; expr.oninput();">
+  <label class="form-check-label" for="exampleRadios3">
+    all
+  </label>
+</div>
+
+<br/>
+<b>Implicit multiplication:</b><br/>
+<div class="custom-control custom-switch custom-control-inline">
+  <input type="checkbox" class="custom-control-input" id="customSwitch1" onclick="implicit = (!this.checked?'hide':'show'); expr.oninput();">
+  <label class="custom-control-label" for="customSwitch1"></label>
+</div>
+<br/>
+<b>Use Bignumber:</b><br/>
+<div class="custom-control custom-switch custom-control-inline">
+  <input type="checkbox" class="custom-control-input" id="customSwitch2" onclick="numbertype = (!this.checked?'number':'BigNumber'); expr.oninput();" checked>
+  <label class="custom-control-label" for="customSwitch2"></label>
+</div>
+
+
+<script>  
+  const expr = document.getElementById('expr')
+  const pretty = document.getElementById('pretty')
+  const result = document.getElementById('result')
+  let parenthesis = 'keep'
+  let implicit = 'hide'
+  let precision=100;
+  let numbertype='BigNumber';
+  
+
+  const mj = function (tex) {
+    return MathJax.tex2svg(tex, {em: 16, ex: 6, display: false});
+  }
+
+   function calc() {
+	math.config({'number':numbertype,'precision':precision});
+    let node = null
+
+    try {
+      // parse the expression
+      node = math.parse(expr.value)
+
+      // evaluate the result of the expression
+	  res=node.compile().evaluate();
+      result.innerHTML = math.format(res);
+	  console.log(res);
+	  document.getElementById('hresult').innerHTML = (math.bignumber(res).toHexadecimal())
+    }
+    catch (err) {
+      result.innerHTML = '<span style="color: red;">' + err.toString() + '</span>'
+    }
+
+    try {
+      // export the expression to LaTeX
+      const latex = node ? node.toTex({parenthesis: parenthesis, implicit: implicit}) : ''
+      console.log('LaTeX expression:', latex)
+
+      // display and re-render the expression
+      MathJax.typesetClear();
+      pretty.innerHTML = '';
+      pretty.appendChild(mj(latex));
+    }
+    catch (err) {}
+  }
+  let timer=0;
+  expr.oninput = function(){
+	if(timer!=0)clearTimeout(timer);  
+	timer=setTimeout(calc,1000);
+  };
+  
+  // initialize with an example expression
+  //expr.value = '1';//'sqrt(75 / 3) + det([[-1, 2], [3, 1]]) - sin(pi / 4)^2';
+  //expr.oninput();
+</script>
+
+</body>
+</html>

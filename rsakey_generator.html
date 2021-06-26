@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Calc</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+	<script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+</head>
+<body>
+Info:  The number input format should be 0x1111n for HEX, and 123n for decimal.
+<br/><br/>
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    <span class="input-group-text" >p:</span>
+  </div>
+  <input type="text" class="form-control" id="p"  placeholder="" value='0xf58fc18e45f00228e5c64fe5c73437564b34ef890955c99e6a8fa26813fd6873n'>
+</div>
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    <span class="input-group-text" >q:</span>
+  </div>
+  <input type="text" class="form-control" id="q"  placeholder="" value='0xdc25692b7d295bb0ab3a25f6417bd8c72e6e65e53d792497cdf59e2d2ff6811fn'>
+</div>
+
+<div class="input-group mb-3">
+  <div class="input-group-prepend">
+    <span class="input-group-text" >e:</span>
+  </div>
+  <input type="text" class="form-control" id="e"  placeholder="" value='65537n'>
+</div>
+
+
+
+
+<textarea id='o'  style='width:100%;height:300px;' ></textarea>
+<button onclick='gen();' >GEN</button>
+<script>
+var rsa = forge.pki.rsa;
+function gen(){
+	p=BigInt(eval(document.getElementById('p').value));
+	q=BigInt(eval(document.getElementById('q').value));
+	e=BigInt(eval(document.getElementById('e').value));
+	n=(p*q);
+	bits=n.toString(2).length;
+
+	var state = rsa.createKeyPairGenerationState(bits, Number(e));
+	state.p= new forge.jsbn.BigInteger(p.toString());
+	state.q=new forge.jsbn.BigInteger(q.toString());
+	state.state=1;
+	while(!rsa.stepKeyPairGenerationState(state, 0));
+	
+	pk=forge.pki.privateKeyToPem(state.keys.privateKey);
+	document.getElementById('o').value=pk+'\r\n'+forge.pki.publicKeyToPem(state.keys.publicKey);
+
+	var mimeType =  'text/plain';
+	document.getElementById('createInvote').href= 'data:' + mimeType  +  ';charset=utf-8,' + encodeURIComponent(pk);
+	document.getElementById('createInvote').click();
+}
+
+</script>
+<a onfocus="this.blur();" download="privatekey.txt" id="createInvote" style='display:none;' >code</a>
+<br/>
+</body>
+</html>
