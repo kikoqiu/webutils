@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns = "http://www.w3.org/1999/xhtml">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	
+
+
+	<link href="googlefonts.css" rel="stylesheet" type="text/css">
+	<link href="animate.min.css" rel="stylesheet" type="text/css">
+	<link href="quasar.css" rel="stylesheet" type="text/css">
+	<!--<link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@^4.0.0/animate.min.css" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.4.2/dist/quasar.css" rel="stylesheet" type="text/css">
+	<script src="https://cdn.plot.ly/plotly-2.20.0.min.js" charset="utf-8"></script>-->
+	<script src="plotly-2.20.0.min.js" charset="utf-8"></script>
+
+</head>
+<body>
+<div id="box" style="padding:4vw"></div>
+<div style="clear:both;"></div>
+<script type="text/javascript">
+
+
+
+</script>
+<div id="plot"></div>
+<!-- example of injection point where you write your app template -->
+<div id="q-app">
+
+	<div class="q-pa-md">
+		<q-badge color="secondary">
+		 PID: KP {{ kp }} 
+		</q-badge>
+		<q-slider v-model="kp" :min="0" :max="1"  markers :step="0.01" color="green"/><br/>
+	</div>
+	<div class="q-pa-md">
+		<q-badge color="secondary">
+		 PID: KI {{ki}} 
+		</q-badge>
+		<q-slider v-model="ki" :min="0" :max="0.005"  markers :step="0.00001" color="blue"/><br/>
+	</div>
+	<div class="q-pa-md">
+		<q-badge color="secondary">
+		 PID: KD{{kd}}
+		</q-badge>
+		<q-slider v-model="kd" :min="0" :max="10"  markers :step="0.1" color="green"/><br/>
+	</div>
+</div>
+
+<!-- Add the following at the end of your body tag
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.4.2/dist/quasar.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quasar@2.4.2/dist/lang/zh-CN.umd.prod.js"></script> -->
+<script src="vue.global.js"></script>
+<script src="quasar.umd.js"></script>
+<script src="zh-CN.umd.prod.js"></script>
+
+<script>
+  /*
+	Example kicking off the UI. Obviously, adapt this to your specific needs.
+	Assumes you have a <div id="q-app"></div> in your <body> above
+   */
+  const app = Vue.createApp({
+		mounted(){
+		},
+		data() {
+			return {
+				kp:0,
+				ki:0,
+				kd:0,
+				target:10,
+				playing:false,
+			}
+		},
+		watch: {
+			plotdata(oldv,newv){
+				this.plot(newv[0],newv[1]);
+			}
+		},
+		computed:{
+			plotdata(){
+				let currentVal=0;
+				let v=0;
+				let lastForce=0;
+				
+				let sumErr=0;
+				let lastErr=0;
+				
+				
+				let xs=[];
+				let ys=[];
+				for(let x=0.01;x<50;x+=0.01){
+				  
+				  v=v*0.999+lastForce*0.05+Math.sin(x)*0.0001;
+				  currentVal = currentVal*0.99 + v*0.05;
+				  
+				  let error= this.target - currentVal;
+				  sumErr += error;
+				  let force = this.kp * error + this.ki * sumErr + this.kd * (error - lastErr);  
+				  force=force;
+				  lastForce=lastForce*0.9+force*0.1;
+				  
+				  lastErr = error;
+				  xs.push(x);
+				  ys.push(currentVal);
+				}
+				return [xs,ys];
+			}
+		},
+		methods: {
+			plot(xv,yv){
+				TESTER = document.getElementById('plot');
+				Plotly.react( TESTER, [
+				{
+					x: xv,
+					y: yv
+				},{
+					x:[0,50],
+					y:[10,10],
+					 mode: 'lines',
+					  name: 'ref',
+					  line: {
+						dash: 'dashdot',
+						width: 1
+					  }
+				}], 
+				{
+					margin: { t: 0 },					
+					yaxis:{
+						//range:[0,this.target*3]
+					}
+					
+				}
+				);
+			}
+		}
+  })
+
+  app.use(Quasar, {
+	config: {
+	  /*
+	  brand: {
+		// primary: '#e46262',
+		// ... or all other brand colors
+	  },
+	  notify: {...}, // default set of options for Notify Quasar plugin
+	  loading: {...}, // default set of options for Loading Quasar plugin
+	  loadingBar: { ... }, // settings for LoadingBar Quasar plugin
+	  // ..and many more (check Installation card on each Quasar component/directive/plugin)
+	  */
+	}
+  })
+  Quasar.lang.set(Quasar.lang.zhCN)
+  app.mount('#q-app')
+</script>
+
+
+</body>
+</html>
